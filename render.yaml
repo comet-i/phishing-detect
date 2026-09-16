@@ -2,32 +2,16 @@ services:
   - type: web
     name: phishing-detector-app
     env: python
-    region: oregon # Change to your preferred Render region
-    plan: free     # Or 'starter' for more memory
+    region: oregon
+    plan: free
     buildCommand: |
-      # 1. Build the React Frontend
-      echo "Building Frontend..."
-      cd frontend
-      npm install
-      npm run build
-      cd ..
-      
-      # 2. Prepare Backend and install Python dependencies
-      echo "Installing Python Dependencies..."
+      echo "Installing Python dependencies..."
       cd backend
       pip install -r requirements.txt
-      
-      # 3. (Optional) Trigger model training if models don't exist
-      if [ ! -f "./models/phishing_rf_model.pkl" ]; then
-        echo "Training model..."
-        python data_pipeline.py
-        python model_trainer.py
-      fi
+      # Note: We skip npm build and model training because 
+      # the frontend 'dist' folder and backend '.pkl' models 
+      # are already committed to this Git repository.
     startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.10.12
-      - key: KAGGLE_USERNAME
-        sync: false # You will set this in the Render Dashboard
-      - key: KAGGLE_KEY
-        sync: false # You will set this in the Render Dashboard
