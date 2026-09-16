@@ -1,0 +1,10 @@
+
+[
+    "url_length",
+    "domain_length",
+    "num_dots",
+    "num_hyphens",
+    "has_at_symbol",
+    "has_ip",
+    "domain_entropy"
+]
