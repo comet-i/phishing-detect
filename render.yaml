@@ -1,14 +1,9 @@
 services:
   - type: web
-    name: phishing-detector-app
+    name: phishing-detection-backend
     env: python
-    region: oregon
-    plan: free
-    buildCommand: |
-      echo "Installing Python dependencies..."
-      cd backend
-      pip install -r requirements.txt
-    startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
+    buildCommand: pip install -r backend/requirements.txt && python backend/data_pipeline.py && python backend/model_trainer.py
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
-        value: 3.10.12
+        value: 3.11.5
