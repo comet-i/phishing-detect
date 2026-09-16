@@ -1,37 +1,42 @@
-# backend/model_trainer.py
+import os
 import pandas as pd
 import joblib
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report
+
+# Use absolute paths
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(BASE_DIR, 'data')
+MODELS_DIR = os.path.join(BASE_DIR, 'models')
 
 def train_model():
-    """Trains the Random Forest model with max_depth=4."""
-    X = pd.read_csv('./data/X_train.csv')
-    y = pd.read_csv('./data/y_train.csv')
+    os.makedirs(MODELS_DIR, exist_ok=True)
+    
+    x_path = os.path.join(DATA_DIR, 'X_train.csv')
+    y_path = os.path.join(DATA_DIR, 'y_train.csv')
+    
+    if not os.path.exists(x_path) or not os.path.exists(y_path):
+        raise FileNotFoundError(f"Training data not found at {DATA_DIR}. Run data_pipeline.py first.")
+        
+    print("Loading training data...")
+    X = pd.read_csv(x_path)
+    y = pd.read_csv(y_path)
     
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     
-    # "4 layers" interpreted as max_depth=4 for the decision trees
-    model = RandomForestClassifier(
-        n_estimators=100, 
-        max_depth=4,       # Explicitly setting the 4 layers/depth
-        random_state=42,
-        class_weight='balanced'
-    )
-    
+    print("Training Random Forest (max_depth=4)...")
+    model = RandomForestClassifier(n_estimators=100, max_depth=4, random_state=42, class_weight='balanced')
     model.fit(X_train, y_train)
     
-    # Evaluate
-    preds = model.predict(X_test)
-    print(classification_report(y_test, preds))
+    print(f"Model Accuracy: {model.score(X_test, y_test):.4f}")
     
-    # Save model and feature names
-    joblib.dump(model, './models/phishing_rf_model.pkl')
-    joblib.dump(list(X.columns), './models/feature_names.pkl')
-    print("Model trained and saved.")
+    # Save using absolute paths
+    model_path = os.path.join(MODELS_DIR, 'phishing_rf_model.pkl')
+    features_path = os.path.join(MODELS_DIR, 'feature_names.pkl')
+    
+    joblib.dump(model, model_path)
+    joblib.dump(list(X.columns), features_path)
+    print(f"Model saved to {MODELS_DIR}")
 
 if __name__ == "__main__":
-    import os
-    os.makedirs('./models', exist_ok=True)
     train_model()
