@@ -8,9 +8,6 @@ services:
       echo "Installing Python dependencies..."
       cd backend
       pip install -r requirements.txt
-      # Note: We skip npm build and model training because 
-      # the frontend 'dist' folder and backend '.pkl' models 
-      # are already committed to this Git repository.
     startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
