@@ -40,6 +40,10 @@ class FeatureExtractor:
         scheme = parsed.scheme.lower()
         has_http = 1 if scheme == "http" else 0
         has_https = 1 if scheme == "https" else 0
+        has_onion = 1 if hostname.endswith(".onion") or hostname == "onion" else 0
+        # Explicit policy signal: these characters anywhere in the submitted
+        # URL receive score 4, while HTTP and .onion receive score 5.
+        has_dangerous_symbols = 1 if re.search(r"[@#$]", candidate) else 0
 
         return {
             "url_length": len(candidate),
@@ -53,6 +57,8 @@ class FeatureExtractor:
             "invalid_hostname_chars": invalid_hostname_chars,
             "has_http": has_http,
             "has_https": has_https,
+            "has_onion": has_onion,
+            "has_dangerous_symbols": has_dangerous_symbols,
             "hostname": hostname,
         }
 
@@ -69,5 +75,7 @@ class FeatureExtractor:
             "invalid_hostname_chars": 0,
             "has_http": 0,
             "has_https": 0,
+            "has_onion": 0,
+            "has_dangerous_symbols": 0,
             "hostname": "",
         }
