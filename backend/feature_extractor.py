@@ -1,55 +1,79 @@
-# backend/feature_extractor.py
-import re
 import math
+import re
 from urllib.parse import urlparse
+
 import tldextract
 
+
 class FeatureExtractor:
-    """Layer 2: Converts raw URLs into numeric feature vectors."""
-    
+    """Extract URL features while distinguishing host threats from valid URL syntax."""
+
+    FEATURE_NAMES = [
+        "url_length",
+        "domain_length",
+        "num_dots",
+        "num_hyphens",
+        "has_at_symbol",
+        "has_ip",
+        "domain_entropy",
+    ]
+
     def __init__(self):
         self.extractor = tldextract.TLDExtract()
 
-    def _calculate_entropy(self, string: str) -> float:
-        """Calculates Shannon entropy of a string."""
-        if not string: return 0.0
-        prob = [float(string.count(c)) / len(string) for c in dict.fromkeys(list(string))]
-        return -sum([p * math.log(p) / math.log(2.0) for p in prob])
+    def _calculate_entropy(self, value: str) -> float:
+        if not value:
+            return 0.0
+        probabilities = [value.count(char) / len(value) for char in set(value)]
+        return -sum(probability * math.log(probability, 2) for probability in probabilities)
 
     def extract_features(self, url: str) -> dict:
-        """Extracts numeric features from a URL string."""
         if not url or not isinstance(url, str):
             return self._get_empty_features()
 
-        parsed = urlparse(url if '://' in url else f'http://{url}')
-        domain_info = self.extractor(url)
-        
-        # 1. Length Features
-        url_length = len(url)
-        domain_length = len(domain_info.domain)
-        
-        # 2. Character & Symbol Features
-        num_dots = url.count('.')
-        num_hyphens = url.count('-')
-        has_at_symbol = 1 if '@' in url else 0
-        
-        # 3. IP Address Presence
-        ip_pattern = re.compile(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$')
-        has_ip = 1 if ip_pattern.match(domain_info.domain) else 0
-        
-        # 4. Entropy (High entropy in domain often indicates DGA/malicious)
-        domain_entropy = self._calculate_entropy(domain_info.domain)
+        candidate = url.strip()
+        parsed = urlparse(candidate if "://" in candidate else f"http://{candidate}")
+        hostname = (parsed.hostname or "").lower().rstrip(".")
+        username = parsed.username or ""
+        password = parsed.password or ""
+        domain_info = self.extractor(hostname)
+
+        # '@' is suspicious when it separates credentials from the real host.
+        # An '@' in a query/path is valid URL syntax and is not penalized.
+        has_credentials = 1 if username or password else 0
+        has_at_symbol = 1 if has_credentials else 0
+
+        # These characters are invalid in a normal hostname. Symbols in the
+        # path/query are allowed and should not automatically make a URL unsafe.
+        invalid_hostname_chars = len(re.findall(r"[^a-z0-9.-]", hostname))
+        has_ip = 1 if re.fullmatch(r"(?:\d{1,3}\.){3}\d{1,3}", hostname) else 0
+        has_https = 1 if parsed.scheme.lower() == "https" else 0
 
         return {
-            'url_length': url_length,
-            'domain_length': domain_length,
-            'num_dots': num_dots,
-            'num_hyphens': num_hyphens,
-            'has_at_symbol': has_at_symbol,
-            'has_ip': has_ip,
-            'domain_entropy': domain_entropy
+            "url_length": len(candidate),
+            "domain_length": len(hostname),
+            "num_dots": hostname.count("."),
+            "num_hyphens": hostname.count("-"),
+            "has_at_symbol": has_at_symbol,
+            "has_credentials": has_credentials,
+            "has_ip": has_ip,
+            "domain_entropy": self._calculate_entropy(domain_info.domain),
+            "invalid_hostname_chars": invalid_hostname_chars,
+            "has_https": has_https,
+            "hostname": hostname,
         }
 
     def _get_empty_features(self) -> dict:
-        return {k: 0 for k in ['url_length', 'domain_length', 'num_dots', 
-                               'num_hyphens', 'has_at_symbol', 'has_ip', 'domain_entropy']}
+        return {
+            "url_length": 0,
+            "domain_length": 0,
+            "num_dots": 0,
+            "num_hyphens": 0,
+            "has_at_symbol": 0,
+            "has_credentials": 0,
+            "has_ip": 0,
+            "domain_entropy": 0.0,
+            "invalid_hostname_chars": 0,
+            "has_https": 0,
+            "hostname": "",
+        }
