@@ -9,13 +9,8 @@ class FeatureExtractor:
     """Extract URL features while distinguishing host threats from valid URL syntax."""
 
     FEATURE_NAMES = [
-        "url_length",
-        "domain_length",
-        "num_dots",
-        "num_hyphens",
-        "has_at_symbol",
-        "has_ip",
-        "domain_entropy",
+        "url_length", "domain_length", "num_dots", "num_hyphens",
+        "has_at_symbol", "has_ip", "domain_entropy",
     ]
 
     def __init__(self):
@@ -38,16 +33,13 @@ class FeatureExtractor:
         password = parsed.password or ""
         domain_info = self.extractor(hostname)
 
-        # '@' is suspicious when it separates credentials from the real host.
-        # An '@' in a query/path is valid URL syntax and is not penalized.
         has_credentials = 1 if username or password else 0
         has_at_symbol = 1 if has_credentials else 0
-
-        # These characters are invalid in a normal hostname. Symbols in the
-        # path/query are allowed and should not automatically make a URL unsafe.
         invalid_hostname_chars = len(re.findall(r"[^a-z0-9.-]", hostname))
         has_ip = 1 if re.fullmatch(r"(?:\d{1,3}\.){3}\d{1,3}", hostname) else 0
-        has_https = 1 if parsed.scheme.lower() == "https" else 0
+        scheme = parsed.scheme.lower()
+        has_http = 1 if scheme == "http" else 0
+        has_https = 1 if scheme == "https" else 0
 
         return {
             "url_length": len(candidate),
@@ -59,6 +51,7 @@ class FeatureExtractor:
             "has_ip": has_ip,
             "domain_entropy": self._calculate_entropy(domain_info.domain),
             "invalid_hostname_chars": invalid_hostname_chars,
+            "has_http": has_http,
             "has_https": has_https,
             "hostname": hostname,
         }
@@ -74,6 +67,7 @@ class FeatureExtractor:
             "has_ip": 0,
             "domain_entropy": 0.0,
             "invalid_hostname_chars": 0,
+            "has_http": 0,
             "has_https": 0,
             "hostname": "",
         }
