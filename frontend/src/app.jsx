@@ -41,10 +41,10 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-sky-900 text-sky-200 flex flex-col items-center py-12 px-4">
+    <div className="min-h-screen bg-green-900 text-sky-200 flex flex-col items-center py-12 px-4">
       <header className="mb-10 text-center">
         <h1 className="text-3xl font-bold text-sky-100">Phishing URL Scanner</h1>
-        <p className="text-sky-200 mt-2">Analyze URLs for malicious intent using Cloud ML</p>
+        <p className="text-green-200 mt-2">Analyze URLs for malicious intent using Cloud ML</p>
       </header>
       <main className="w-full max-w-2xl bg-sky-800 rounded-xl shadow-sm border border-sky-700 p-8">
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -85,7 +85,7 @@ export default function App() {
           </div>
         )}
       </main>
-      <footer className="mt-12 text-xs text-sky-200">Powered by Random Forest Classifier (Cloud Hosted)</footer>
+      <footer className="mt-12 text-xs text-green-200">Powered by Random Forest Classifier (Cloud Hosted)</footer>
     </div>
   );
 }
